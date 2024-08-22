@@ -9,7 +9,7 @@ import (
 )
 
 type Record struct {
-	Value  string `json:"value"`
+	Value  []byte `json:"value"`
 	Offset uint64 `json:"offset"`
 }
 
@@ -28,7 +28,7 @@ func (s *Log) DecodeJson(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	fmt.Printf("Record Value: %s, offset:%d\n", record.Value, record.Offset)
+	fmt.Printf("Record Value: %s, offset:%d\n", string(record.Value), record.Offset)
 	s.records = append(s.records, record)
 
 	w.WriteHeader(http.StatusOK)
