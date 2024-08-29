@@ -20,22 +20,23 @@ type Log struct {
 
 func (s *Log) DecodeJson(w http.ResponseWriter, r *http.Request) {
 
-	var record Record
+	var record struct {
+		Value []byte `json:"value"`
+	}
 
 	if err := json.NewDecoder(r.Body).Decode(&record); err != nil {
 		http.Error(w, "It can't deserialize the json", http.StatusBadRequest)
 	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	fmt.Printf("Record Value: %s, offset:%d\n", string(record.Value), record.Offset)
-	s.records = append(s.records, record)
-
+	s.records = append(s.records, Record{record.Value, uint64(len(s.records))})
 	w.WriteHeader(http.StatusOK)
+
 }
 
 func (s *Log) GetRecord(w http.ResponseWriter, r *http.Request) {
-
 	var request struct {
 		Offset uint64 `json:"offset"`
 	}
@@ -43,20 +44,20 @@ func (s *Log) GetRecord(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "It can't deserialize the json", http.StatusBadRequest)
 		return
 	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for _, record := range s.records {
-		if record.Offset == request.Offset {
-			if err := json.NewEncoder(w).Encode(record); err != nil {
-				http.Error(w, "It can't serialize the struct to json", http.StatusInternalServerError)
-				return
-			}
-			fmt.Println("record: ", record)
+	if request.Offset <= uint64(len(s.records)-1) {
+		if err := json.NewEncoder(w).Encode(s.records[int(request.Offset)-1]); err != nil {
+			http.Error(w, "It can't serialize the struct to json", http.StatusInternalServerError)
 			return
 		}
+		fmt.Println("record: ", s.records[request.Offset])
+		return
+	} else {
+		http.Error(w, "Record not found in the slice", http.StatusNotFound)
 	}
-	http.Error(w, "Record not found in the slice", http.StatusNotFound)
 }
 
 func main() {
