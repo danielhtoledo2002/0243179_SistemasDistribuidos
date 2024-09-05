@@ -11,9 +11,9 @@ const ENT_WIDTH: u64 = OFF_WIDTH + POS_WIDTH;
 
 #[derive(Debug)]
 pub struct Index {
-    mmap: MmapMut,
-    size: u64,
-    path: String,
+    pub mmap: MmapMut,
+    pub size: u64,
+    pub path: String,
 }
 
 impl Index {
@@ -67,7 +67,7 @@ impl Index {
         Ok((offset, position))
     }
 
-    pub fn write(&mut self, file: &mut File, off: u32, pos: u64) -> io::Result<()> {
+    pub fn write(&mut self, off: u32, pos: u64) -> io::Result<()> {
         let mem_size = self.mmap.len() as u64;
 
         if mem_size < self.size + ENT_WIDTH {
@@ -83,7 +83,6 @@ impl Index {
             .copy_from_slice(&pos.to_le_bytes());
 
         self.size += ENT_WIDTH;
-        file.set_len(self.size)?;
         Ok(())
     }
 
@@ -95,6 +94,8 @@ impl Index {
         self.mmap.flush_async()?;
         file.set_len(self.size)?;
         file.sync_all()?;
+        self.path = "".to_string();
+        file.flush();
         Ok(())
     }
 }

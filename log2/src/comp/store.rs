@@ -8,13 +8,14 @@ pub const LEN_WIDTH: usize = 8;
 
 #[derive(Debug)]
 pub struct Store {
-    reader: BufReader<File>,
-    writer: BufWriter<File>,
-    size: u64,
+    pub reader: BufReader<File>,
+    pub writer: BufWriter<File>,
+    pub size: u64,
+    pub path: String,
 }
 
 impl Store {
-    pub async fn new(file: File) -> io::Result<Store> {
+    pub async fn new(file: File, path: String) -> io::Result<Store> {
         let metadata = file.metadata().await?;
         let size = metadata.len();
         let reader = BufReader::new(file.try_clone().await?);
@@ -24,6 +25,7 @@ impl Store {
             reader,
             writer,
             size,
+            path,
         })
     }
 
@@ -97,8 +99,17 @@ impl Store {
         }
     }
 
-    pub async fn close(mut self) -> io::Result<()> {
+    pub async fn name(self) -> String {
+        self.path
+    }
+
+    pub async fn close(&mut self) -> io::Result<()> {
+        self.path = "".to_string();
         match self.writer.flush().await {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e),
+        };
+        match self.reader.flush().await {
             Ok(_) => Ok(()),
             Err(e) => Err(e),
         }

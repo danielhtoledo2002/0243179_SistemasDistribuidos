@@ -1,6 +1,7 @@
 mod comp {
     pub mod config;
     pub mod index;
+    pub mod record;
     pub mod segments;
     pub mod store;
 }
@@ -13,9 +14,9 @@ use tokio::fs::OpenOptions;
 use tokio::net::TcpListener;
 use tokio::task::spawn_blocking;
 
-mod log {
-    include!(concat!(env!("OUT_DIR"), "/log.v1.rs"));
-}
+// mod log {
+//     include!(concat!(env!("OUT_DIR"), "/log.v1.rs"));
+// }
 
 // #[tokio::main]
 // async fn main() -> Result<(), Box<dyn Error>> {
@@ -53,6 +54,7 @@ use std::io::{self, Write};
 use std::path::Path;
 
 use crate::comp::config::SegmentConfig;
+use crate::comp::record::Record;
 
 // #[derive(Clone)]
 // struct Log {
