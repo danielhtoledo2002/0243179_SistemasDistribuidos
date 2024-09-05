@@ -1,22 +1,21 @@
 mod comp {
     pub mod config;
     pub mod index;
+    pub mod log;
     pub mod record;
     pub mod segments;
     pub mod store;
 }
 use comp::config::Config;
 use comp::index::Index;
+// use comp::log::Log;
+use comp::segments::Segment;
 use comp::store::Store;
 use std::error::Error;
 use tokio;
 use tokio::fs::OpenOptions;
 use tokio::net::TcpListener;
 use tokio::task::spawn_blocking;
-
-// mod log {
-//     include!(concat!(env!("OUT_DIR"), "/log.v1.rs"));
-// }
 
 // #[tokio::main]
 // async fn main() -> Result<(), Box<dyn Error>> {
@@ -106,8 +105,8 @@ async fn main() -> io::Result<()> {
 
         let mut index = Index::new(&file, &config, name)?;
 
-        index.write(&mut file, 1, 100)?;
-        index.write(&mut file, 2, 4)?;
+        index.write(1, 100)?;
+        index.write(2, 4)?;
 
         match index.read(-1) {
             Ok((offset, position)) => {

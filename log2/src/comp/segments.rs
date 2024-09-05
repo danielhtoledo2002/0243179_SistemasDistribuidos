@@ -11,13 +11,13 @@ use tokio::fs::File as AsyncFile;
 
 #[derive(Debug)]
 pub struct Segment {
-    store: Box<Store>,
-    index: Box<Index>,
-    base_offset: u64,
-    next_offset: u64,
-    config: Box<Config>,
-    path_index: String,
-    path_store: String,
+    pub store: Box<Store>,
+    pub index: Box<Index>,
+    pub base_offset: u64,
+    pub next_offset: u64,
+    pub config: Box<Config>,
+    pub path_index: String,
+    pub path_store: String,
 }
 
 impl Segment {
