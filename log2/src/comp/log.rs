@@ -1,12 +1,17 @@
+use std::future::Future;
 use crate::comp::config::Config;
 use crate::comp::record::Record;
 use crate::comp::segments::Segment;
+use crate::comp::store::Store;
 use std::collections::BTreeMap;
 use std::fs::{remove_dir_all, File, OpenOptions};
 use std::io::{self, BufReader, BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
+use std::pin::Pin;
 use std::sync::{Arc, RwLock};
+use std::task::{Context, Poll};
 use tokio::fs;
+use tokio::io::{AsyncRead, ReadBuf};
 
 pub struct Log {
     dir: PathBuf,
@@ -155,13 +160,68 @@ impl Log {
         Ok(())
     }
 
-    /*pub fn reader(&self) -> io::Result<impl Read> {
-        let readers: Vec<Box<dyn Read>> = self
-            .segments
-            .iter()
-            .map(|seg| Box::new(seg.read().unwrap().store.read()) as Box<dyn Read>)
-            .collect();
+ 
 
-        Ok(io::multi_reader(readers))
-    }*/
+
+    /* 
+    
+    proximamente va a jalar 
+    estoy teniendo skyll issues     
+ 
+        pub fn reader(&self) -> io::Result<impl Read> {
+            let readers: Vec<Box<dyn Read>> = self
+                .segments
+                .iter()
+                .map(|seg| Box::new(seg.read().unwrap().store.read()) as Box<dyn Read>)
+                .collect();
+    
+            Ok(io::multi_reader(readers))
+        }
+        
+       
+     */
 }
+
+
+
+pub struct OriginReader {
+    store: Arc<Store>, 
+    off: u64,
+}
+
+impl OriginReader {
+    pub async fn new(store: Arc<Store>) -> Self {
+        OriginReader { store, off: 0 }
+    }
+}
+
+
+impl AsyncRead for OriginReader {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut ReadBuf<'_>
+    ) -> Poll<io::Result<()>> {
+        let store = self.store.clone();  
+        let offset = self.off;
+        
+        
+        let fut = store.reat_at(buf.initialize_unfilled(), offset);
+
+        tokio::pin!(fut);  
+
+        match fut.poll(cx) {
+            Poll::Ready(Ok(n)) => {
+                self.off += n as u64; 
+                  
+                Poll::Ready(Ok(()))    
+            }
+            Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
+            Poll::Pending => Poll::Pending, 
+        }
+    }
+}
+
+
+
+

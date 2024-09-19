@@ -42,8 +42,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let (n, pos) = store.append(data).await?;
     println!("Data appended at position: {}, bytes written: {}", pos, n);
 
-    let read_data = store.read(pos).await?;
-    println!("Data read: {:?}", String::from_utf8(read_data)?);
+    let mut read_data = store.read(pos).await?;
+    println!("Data read: {:?}", String::from_utf8(read_data.clone())?);
+    
+    
+    println!("EL tamaño es de {}", store.reat_at(&mut read_data[..], pos).await.unwrap() as u64);
 
     store.close().await?;
     println!("Store closed successfully.");
