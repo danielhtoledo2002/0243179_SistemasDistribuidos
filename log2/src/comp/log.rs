@@ -11,8 +11,8 @@ use tokio::fs;
 pub struct Log {
     dir: PathBuf,
     config: Config,
-    active_segment: RwLock<Box<Segment>>,
-    segments: RwLock<Vec<Segment>>,
+    active_segment: Option<Arc<RwLock<Segment>>>,
+    segments: Vec<Arc<RwLock<Segment>>>,
 }
 
 impl Log {
@@ -25,12 +25,14 @@ impl Log {
             config.segment.max_index_bytes = 1024;
         }
 
-        let log = Log {
+        let mut log = Log {
             dir: Path::new(dir).to_path_buf(),
             config,
             active_segment: None,
             segments: Vec::new(),
         };
+
+        log.setup().await?;
         Ok(log)
     }
 
@@ -50,7 +52,7 @@ impl Log {
 
         base_offsets.sort();
         for i in 0..base_offsets.len() {
-            if let Err(e) = self.new_segment(base_offsets[i]) {
+            if let Err(e) = self.new_segment(base_offsets[i]).await {
                 return Err(e);
             }
             if i + 1 < base_offsets.len() {
@@ -59,7 +61,7 @@ impl Log {
         }
 
         if self.segments.is_empty() {
-            self.new_segment(self.config.segment.initial_offset)?;
+            self.new_segment(self.config.segment.initial_offset).await?;
         }
 
         Ok(())
@@ -70,87 +72,96 @@ impl Log {
             .active_segment
             .as_mut()
             .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "No active segment"))?
+            .write().unwrap()
             .append(record)
             .await?;
         offset += 1;
-        if self.active_segment.as_ref().unwrap().is_maxed().await {
-            self.new_segment(offset)?;
+
+        if let Some(ref a) = self.active_segment {
+            if a.read().unwrap().is_maxed().await {
+                self.new_segment(offset).await?;
+            }
         }
+
+
 
         Ok(offset)
     }
 
     pub async fn read(&self, offset: u64) -> io::Result<Record> {
-        let segment = self
-            .segments
+        let segment = self.segments
             .iter()
-            .find(|seg| seg.base_offset <= offset && offset < seg.next_offset)
+            .find(|seg| {
+                let guard = seg.read().unwrap();
+                guard.base_offset <= offset && offset < guard.next_offset
+            })
             .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Offset out of range"))?;
 
-        segment.read(offset)
+        segment.read().unwrap().read(offset).await
     }
 
-    fn new_segment(&mut self, offset: u64) -> io::Result<()> {
-        let segment = Segment::new(&self.dir, offset, &self.config)?;
-        self.segments.push(segment.clone());
+    async fn new_segment(&mut self, offset: u64) -> io::Result<()> {
+        let segment = Arc::new(RwLock::new(Segment::new(&self.dir.as_os_str().to_str().unwrap(), offset, self.config.clone()).await?));
+        self.segments.push(Arc::clone(&segment));
         self.active_segment = Some(segment);
         Ok(())
     }
 
-    pub fn close(&mut self) -> io::Result<()> {
-        let _lock = self.lock.write().unwrap(); // Lock for write
+    pub async fn close(&mut self) -> io::Result<()> {
         for segment in &mut self.segments {
-            segment.close()?;
+            segment.write().unwrap().close().await?;
         }
         Ok(())
     }
 
-    pub fn remove(&self) -> io::Result<()> {
-        self.close()?;
+    pub async fn remove(&mut self) -> io::Result<()> {
+        self.close().await?;
         remove_dir_all(&self.dir)
     }
 
-    pub fn reset(&mut self) -> io::Result<()> {
-        self.remove()?;
-        self.setup()
+    pub async fn reset(&mut self) -> io::Result<()> {
+        self.remove().await?;
+        self.setup().await
     }
 
     pub fn lowest_offset(&self) -> io::Result<u64> {
-        let _lock = self.lock.read().unwrap(); // Lock for read
-        Ok(self.segments.first().map_or(0, |seg| seg.base_offset))
+        Ok(self.segments.first().map_or(0, |seg| seg.read().unwrap().base_offset))
     }
 
     pub fn highest_offset(&self) -> io::Result<u64> {
-        let _lock = self.lock.read().unwrap(); // Lock for read
         Ok(self
             .segments
             .last()
-            .map_or(0, |seg| seg.next_offset.saturating_sub(1)))
+            .map_or(0, |seg| seg.read().unwrap().next_offset.saturating_sub(1)))
     }
 
-    pub fn truncate(&mut self, lowest: u64) -> io::Result<()> {
-        let _lock = self.lock.write().unwrap(); // Lock for write
-
-        self.segments.retain(|seg| {
+    pub async fn truncate(&mut self, lowest: u64) -> io::Result<()> {
+        let mut remove = vec![];
+        for (i, seg) in self.segments.iter().enumerate() {
+            let mut seg = seg.write().unwrap();
             if seg.next_offset <= lowest + 1 {
-                seg.remove().is_ok()
-            } else {
-                true
+                seg.remove().await?;
+                remove.push(i);
             }
+        }
+
+        let mut index = 0;
+        self.segments.retain(|_| {
+            let r = remove.contains(&index);
+            index += 1;
+            r
         });
 
         Ok(())
     }
 
-    pub fn reader(&self) -> io::Result<impl Read> {
-        let _lock = self.lock.read().unwrap(); // Lock for read
-
+    /*pub fn reader(&self) -> io::Result<impl Read> {
         let readers: Vec<Box<dyn Read>> = self
             .segments
             .iter()
-            .map(|seg| Box::new(seg.store.read()) as Box<dyn Read>)
+            .map(|seg| Box::new(seg.read().unwrap().store.read()) as Box<dyn Read>)
             .collect();
 
         Ok(io::multi_reader(readers))
-    }
+    }*/
 }

@@ -19,12 +19,11 @@ use tokio::task::spawn_blocking;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    // Abrir el archivo para lectura y escritura
     let file_path = "temp_file.bin";
     let file = OpenOptions::new()
         .read(true)
         .write(true)
-        .create(true) // Crear el archivo si no existe
+        .create(true)
         .open(file_path)
         .await?;
 

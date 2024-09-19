@@ -72,7 +72,7 @@ impl Segment {
         Ok(current_offset)
     }
 
-    pub async fn read(&mut self, offset: u64) -> Result<Record, std::io::Error> {
+    pub async fn read(&self, offset: u64) -> Result<Record, std::io::Error> {
         let pos = self.index.read((offset - self.base_offset) as i64)?.1;
         let data = self.store.read(pos).await?;
 
@@ -80,7 +80,7 @@ impl Segment {
         Ok(record)
     }
 
-    pub async fn is_maxed(&mut self) -> bool {
+    pub async fn is_maxed(& self) -> bool {
         self.store.size >= self.config.segment.max_store_bytes
             || self.index.size >= self.config.segment.max_index_bytes
     }
