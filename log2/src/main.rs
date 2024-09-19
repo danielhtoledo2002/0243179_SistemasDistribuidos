@@ -1,7 +1,7 @@
 mod comp {
     pub mod config;
     pub mod index;
-    pub mod log;
+    // pub mod log;
     pub mod record;
     pub mod segments;
     pub mod store;
@@ -17,36 +17,40 @@ use tokio::fs::OpenOptions;
 use tokio::net::TcpListener;
 use tokio::task::spawn_blocking;
 
-// #[tokio::main]
-// async fn main() -> Result<(), Box<dyn Error>> {
-//     // Abrir el archivo para lectura y escritura
-//     let file_path = "temp_file.bin";
-//     let file = OpenOptions::new()
-//         .read(true)
-//         .write(true)
-//         .create(true) // Crear el archivo si no existe
-//         .open(file_path)
-//         .await?;
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    // Abrir el archivo para lectura y escritura
+    let file_path = "temp_file.bin";
+    let file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true) // Crear el archivo si no existe
+        .open(file_path)
+        .await?;
 
-//     let mut store = Store::new(file).await?;
+    let mut store = Store::new(file, file_path.to_string()).await?;
 
-//     let data = b"hello   ";
+    let data = b"hello  hasldkfhjalsdk  ";
 
-//     let (n, pos) = store.append(data).await?;
-//     println!("Data appended at position: {}, bytes written: {}", pos, n);
+    let (n, pos) = store.append(data).await?;
+    println!("Data appended at position: {}, bytes written: {}", pos, n);
 
-//     let data = b"world   ";
-//     let (n, pos) = store.append(data).await?;
-//     println!("Data appended at position: {}, bytes written: {}", pos, n);
+    let read_data = store.read(pos).await?;
+    println!("Data read: {:?}", String::from_utf8(read_data)?);
 
-//     let read_data = store.read(pos).await?;
-//     println!("Data read: {:?}", String::from_utf8(read_data)?);
+    let data = b"hello";
 
-//     store.close().await?;
-//     println!("Store closed successfully.");
+    let (n, pos) = store.append(data).await?;
+    println!("Data appended at position: {}, bytes written: {}", pos, n);
 
-//     Ok(())
-// }
+    let read_data = store.read(pos).await?;
+    println!("Data read: {:?}", String::from_utf8(read_data)?);
+
+    store.close().await?;
+    println!("Store closed successfully.");
+
+    Ok(())
+}
 
 use std::fs::File;
 use std::io::{self, Write};
@@ -87,41 +91,41 @@ use crate::comp::record::Record;
 //     let a = a.logger.read().unwrap();
 // }
 
-#[tokio::main]
-async fn main() -> io::Result<()> {
-    let _ = spawn_blocking(|| -> io::Result<Index> {
-        let path = Path::new("index_file.bin");
+// #[tokio::main]
+// async fn main() -> io::Result<()> {
+//     let _ = spawn_blocking(|| -> io::Result<Index> {
+//         let path = Path::new("index_file.bin");
 
-        let name = "index_file.bin".to_string();
-        let config = Config {
-            segment: SegmentConfig {
-                max_store_bytes: 12,
-                max_index_bytes: 1024,
-                initial_offset: 4,
-            },
-        };
+//         let name = "index_file.bin".to_string();
+//         let config = Config {
+//             segment: SegmentConfig {
+//                 max_store_bytes: 12,
+//                 max_index_bytes: 1024,
+//                 initial_offset: 4,
+//             },
+//         };
 
-        let mut file = File::create_new(path)?;
+//         let mut file = File::create_new(path)?;
 
-        let mut index = Index::new(&file, &config, name)?;
+//         let mut index = Index::new(&file, &config, name)?;
 
-        index.write(1, 100)?;
-        index.write(2, 4)?;
+//         index.write(1, 100)?;
+//         index.write(2, 4)?;
 
-        match index.read(-1) {
-            Ok((offset, position)) => {
-                println!("Offset: {}, Position: {}", offset, position);
-            }
-            Err(e) => {
-                println!("Error reading index: {}", e);
-            }
-        }
+//         match index.read(-1) {
+//             Ok((offset, position)) => {
+//                 println!("Offset: {}, Position: {}", offset, position);
+//             }
+//             Err(e) => {
+//                 println!("Error reading index: {}", e);
+//             }
+//         }
 
-        index.close(&mut file)?;
-        Ok(index)
-    })
-    .await
-    .unwrap();
+//         index.close(&mut file)?;
+//         Ok(index)
+//     })
+//     .await
+//     .unwrap();
 
-    Ok(())
-}
+//     Ok(())
+// }

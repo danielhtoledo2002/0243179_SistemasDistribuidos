@@ -17,7 +17,7 @@ pub struct Index {
 }
 
 impl Index {
-    pub fn new(file: &File, config: &Config, path: String) -> io::Result<Index> {
+    pub async fn new(file: &File, config: &Config, path: String) -> io::Result<Index> {
         let size = file.metadata()?.len();
 
         file.set_len(config.segment.max_index_bytes)?;
@@ -31,7 +31,7 @@ impl Index {
         Ok(Index { mmap, size, path })
     }
 
-    pub fn read(&self, idx: i64) -> io::Result<(u32, u64)> {
+    pub async fn read(&self, idx: i64) -> io::Result<(u32, u64)> {
         if self.size == 0 {
             return Err(io::Error::new(
                 io::ErrorKind::UnexpectedEof,
@@ -67,7 +67,7 @@ impl Index {
         Ok((offset, position))
     }
 
-    pub fn write(&mut self, off: u32, pos: u64) -> io::Result<()> {
+    pub async fn write(&mut self, off: u32, pos: u64) -> io::Result<()> {
         let mem_size = self.mmap.len() as u64;
 
         if mem_size < self.size + ENT_WIDTH {
@@ -86,11 +86,11 @@ impl Index {
         Ok(())
     }
 
-    pub fn name(&self) -> io::Result<String> {
+    pub async fn name(&self) -> io::Result<String> {
         Ok(self.path.clone())
     }
 
-    pub fn close(&mut self, file: &mut File) -> io::Result<()> {
+    pub async fn close(&mut self, file: &mut File) -> io::Result<()> {
         self.mmap.flush_async()?;
         file.set_len(self.size)?;
         file.sync_all()?;
