@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -21,11 +22,9 @@ func configFile(filename string) string {
 	if dir := os.Getenv("CONFIG_DIR"); dir != "" {
 		return filepath.Join(dir, filename)
 	}
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		panic(err)
-	}
 
-	// modify this
-	return filepath.Join(homeDir, "/Computo_2_parcial/0246718_SistemasDistribuidos/Proyecto_commit/cert", filename)
+	fmt.Printf("directory: %v\n", filepath.Join("/Users/danielhernandez/reps/0243179_SistemasDistribuidos/cert/", filename))
+
+	return filepath.Join("/Users/danielhernandez/reps/0243179_SistemasDistribuidos/cert/", filename)
+
 }
