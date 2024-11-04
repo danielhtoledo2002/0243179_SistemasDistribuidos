@@ -31,3 +31,7 @@ message ConsumeResponse {
     Record record = 2;
 }
 
+message Record {
+    bytes value = 1;
+    uint64 offset = 2;
+}
