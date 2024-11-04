@@ -38,7 +38,13 @@ impl Store {
         // Hacemos que apunte a la dirección donde quiere escribir el archivo en este caso
         // La ultima posición de el archivo
 
-        match self.writer.write().unwrap().seek(SeekFrom::Start(self.size)).await {
+        match self
+            .writer
+            .write()
+            .unwrap()
+            .seek(SeekFrom::Start(self.size))
+            .await
+        {
             Ok(_) => {}
             Err(e) => {
                 println!(
@@ -68,14 +74,19 @@ impl Store {
         // el flush para saber que ya acabo de escribir
         self.writer.write().unwrap().flush().await?;
 
-        match self.reader.write().unwrap().seek(SeekFrom::Start(pos)).await {
+        match self
+            .reader
+            .write()
+            .unwrap()
+            .seek(SeekFrom::Start(pos))
+            .await
+        {
             Ok(_) => {}
             Err(e) => {
                 println!("Error no existe la dirección donde se quiere leer {}", e);
                 return Err(e);
             }
         };
-
 
         let mut buf = [0u8; LEN_WIDTH];
 
@@ -120,12 +131,24 @@ impl Store {
         }
     }
 
-
-    pub async fn  reat_at(&self, mut buf: & mut [u8], off: u64  ) -> io::Result<usize>  {
-
-        match self.reader.write().unwrap().seek(SeekFrom::Start(off)).await {
+    pub async fn reat_at(&self, mut buf: &mut [u8], off: u64) -> io::Result<usize> {
+        match self
+            .reader
+            .write()
+            .unwrap()
+            .seek(SeekFrom::Start(off))
+            .await
+        {
             Ok(_) => {
-                println!("El tamaño es {}",self.reader.write().unwrap().read_exact(&mut  buf).await.unwrap() as u64 );
+                println!(
+                    "El tamaño es {}",
+                    self.reader
+                        .write()
+                        .unwrap()
+                        .read_exact(&mut buf)
+                        .await
+                        .unwrap() as u64
+                );
             }
             Err(e) => {
                 println!("Error no existe la dirección donde se quiere leer {}", e);
@@ -133,7 +156,6 @@ impl Store {
             }
         };
 
-         self.reader.write().unwrap().read_exact(&mut buf).await
-
+        self.reader.write().unwrap().read_exact(&mut buf).await
     }
 }
