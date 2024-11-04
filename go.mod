@@ -1,4 +1,4 @@
-module github.com/danielhtoledo2002/0243179_SistemasDistribuidos
+module 0243179_SistemasDistribuidos
 
 go 1.22.6
 

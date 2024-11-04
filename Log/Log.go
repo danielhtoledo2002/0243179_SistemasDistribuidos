@@ -3,7 +3,7 @@ package log
 import (
 	"fmt"
 	"io"
-	api "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/api/v1"
+	api "0243179_SistemasDistribuidos/api/v1"
 	"os"
 	"path"
 	"sort"

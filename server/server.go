@@ -6,7 +6,8 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 
-	api "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/api/v1"
+
+	api "0243179_SistemasDistribuidos/api/v1"
 	// "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/auth"
 
 	"google.golang.org/grpc"

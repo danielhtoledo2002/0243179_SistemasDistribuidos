@@ -7,10 +7,11 @@ import (
 	"testing"
 
 
-api "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/api/v1"
-	"github.com/danielhtoledo2002/0243179_SistemasDistribuidos/auth"
-	tlsconfig "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/config"
-	"github.com/danielhtoledo2002/0243179_SistemasDistribuidos/log"
+	api "0243179_SistemasDistribuidos/api/v1"
+
+	"0243179_SistemasDistribuidos/auth"
+	tlsconfig "0243179_SistemasDistribuidos/config"
+	"0243179_SistemasDistribuidos/log"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -49,7 +50,7 @@ func setupTest(t *testing.T, fn func(*Config)) (
 ) {
 	t.Helper()
 
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	l, err := net.Listen("tcp", "127.0.0.1:8000")
 	require.NoError(t, err)
 
 	newClient := func(crtPath, keyPath string) (
