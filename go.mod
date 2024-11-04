@@ -1,4 +1,4 @@
-module github.com/miri
+module github.com/danielhtoledo2002
 
 go 1.22.6
 
