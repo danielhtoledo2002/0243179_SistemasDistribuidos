@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	api "github.com/miri/api/v1"
+	api "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/api/v1"
 )
 
 type Log struct {

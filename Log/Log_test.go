@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	api "github.com/miri/api/v1"
+	api "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/api/v1"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"

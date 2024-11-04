@@ -6,13 +6,7 @@ import (
 	"os"
 	"testing"
 
-	// api "github.com/miri/api/v1"
-	// "github.com/miri/auth"
 
-	//log "github.com/miri/log"
-	// log "github.com/miri/Log"
-
-	// tlsconfig "github.com/miri/config"
 api "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/api/v1"
 	"github.com/danielhtoledo2002/0243179_SistemasDistribuidos/auth"
 	tlsconfig "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/config"
