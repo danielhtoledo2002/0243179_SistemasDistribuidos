@@ -10,7 +10,7 @@ import (
 api "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/api/v1"
 	"github.com/danielhtoledo2002/0243179_SistemasDistribuidos/auth"
 	tlsconfig "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/config"
-	"github.com/danielhtoledo2002/0243179_SistemasDistribuidos/Log"
+	"github.com/danielhtoledo2002/0243179_SistemasDistribuidos/log"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

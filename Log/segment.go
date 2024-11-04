@@ -2,11 +2,11 @@ package log
 
 import (
 	"fmt"
+	"google.golang.org/protobuf/proto"
 	"os"
 	"path"
 
-	log_v1 "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/api/v1"
-	"google.golang.org/protobuf/proto"
+	api "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/api/v1"
 )
 
 type segment struct {
@@ -16,6 +16,7 @@ type segment struct {
 	config                 Config
 }
 
+// inicializa un segmento
 func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 	s := &segment{
 		baseOffset: baseOffset,
@@ -23,7 +24,7 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 	}
 	var err error
 	storeFile, err := os.OpenFile(
-		path.Join(dir, fmt.Sprintf("%d.store", baseOffset)),
+		path.Join(dir, fmt.Sprintf("%d%s", baseOffset, ".store")),
 		os.O_RDWR|os.O_CREATE|os.O_APPEND,
 		0644,
 	)
@@ -34,7 +35,7 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 		return nil, err
 	}
 	indexFile, err := os.OpenFile(
-		path.Join(dir, fmt.Sprintf("%d.index", baseOffset)),
+		path.Join(dir, fmt.Sprintf("%d%s", baseOffset, ".index")),
 		os.O_RDWR|os.O_CREATE,
 		0644,
 	)
@@ -49,61 +50,90 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 	} else {
 		s.nextOffset = baseOffset + uint64(off) + 1
 	}
+
 	return s, nil
 }
-func (s *segment) Append(record *log_v1.Record) (offset uint64, err error) {
-	cur := s.nextOffset
-	record.Offset = cur
-	p, err := proto.Marshal(record)
-	if err != nil {
-		return 0, err
+
+func (s *segment) Append(record *api.Record) (offset uint64, err error) {
+	// guardamos el indice del segmento actual que vamos a crear
+	curr := s.nextOffset
+	record.Offset = curr
+
+	//representamos el record como binario
+	data, errRec := proto.Marshal(record)
+	if errRec != nil {
+		return 0, errRec
 	}
-	_, pos, err := s.store.Append(p)
-	if err != nil {
-		return 0, err
+	//guardamos los datos del store del record para poder ponerles un indice
+	_, pos, errStore := s.store.Append(data)
+	if errStore != nil {
+		return 0, errStore
 	}
-	if err = s.index.Write(
-		uint32(s.nextOffset-uint64(s.baseOffset)),
-		pos,
-	); err != nil {
-		return 0, err
+
+	//verificamos si se guarda el store en el index :D
+	errInd := s.index.Write(uint32(s.nextOffset-s.baseOffset), pos)
+	if errInd != nil {
+		return 0, errInd
 	}
-	s.nextOffset++
-	return cur, nil
+
+	//apuntamos al siguiente offset para guardar el siguiente segmento que venga
+	s.nextOffset = s.nextOffset + 1
+	return curr, nil
+
 }
 
-func (s *segment) Read(off uint64) (*log_v1.Record, error) {
-	_, pos, err := s.index.Read(int64(off - s.baseOffset))
-	if err != nil {
+func (s *segment) Read(offset uint64) (record *api.Record, err error) {
+	//leemos dentro del index la posición de nuestro store
+	_, pos, errIdx := s.index.Read(int64(offset - s.baseOffset))
+	if errIdx != nil {
 		return nil, err
 	}
-	p, err := s.store.Read(pos)
-	if err != nil {
-		return nil, err
+
+	//buscamos el record en store
+	data, errStore := s.store.Read(pos)
+	if errStore != nil {
+		return nil, errStore
 	}
-	record := &log_v1.Record{}
-	err = proto.Unmarshal(p, record)
-	return record, err
+
+	//regresamos nuestro record
+	record = &api.Record{}
+	errProto := proto.Unmarshal(data, record)
+	return record, errProto
+
 }
 
-func (s *segment) Close() error {
-	if err := s.index.Close(); err != nil {
-		return err
+// IsMaxed vemos si los index y store no sobrepasan su tamaño máximo
+func (s *segment) IsMaxed() bool {
+	if s.store.size >= s.config.Segment.MaxStoreBytes {
+		return true
 	}
-	if err := s.store.Close(); err != nil {
-		return err
+	if s.index.size >= s.config.Segment.MaxIndexBytes {
+		return true
 	}
-	return nil
+	return false
 }
 
+// Remove quitamos los index y store si  no hay errores
 func (s *segment) Remove() error {
-	if err := s.Close(); err != nil {
-		return err
+	errClose := s.Close()
+	if errClose != nil {
+		return errClose
 	}
 	if err := os.Remove(s.index.Name()); err != nil {
 		return err
 	}
 	if err := os.Remove(s.store.Name()); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Close cerramos el index y el store
+func (s *segment) Close() error {
+	if err := s.index.Close(); err != nil {
+		return err
+	}
+	if err := s.store.Close(); err != nil {
 		return err
 	}
 	return nil

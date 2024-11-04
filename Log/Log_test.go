@@ -5,10 +5,10 @@ import (
 	"os"
 	"testing"
 
-	api "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/api/v1"
-
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+		api "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/api/v1"
+
 )
 
 func TestLog(t *testing.T) {

@@ -3,14 +3,13 @@ package log
 import (
 	"fmt"
 	"io"
+	api "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/api/v1"
 	"os"
 	"path"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
-
-	api "github.com/danielhtoledo2002/0243179_SistemasDistribuidos/api/v1"
 )
 
 type Log struct {
@@ -23,7 +22,7 @@ type Log struct {
 	segments      []*segment
 }
 
-// START: newlog
+// NewLog START: newlog
 func NewLog(dir string, c Config) (*Log, error) {
 	if c.Segment.MaxStoreBytes == 0 {
 		c.Segment.MaxStoreBytes = 1024
@@ -85,9 +84,7 @@ func (l *Log) Append(record *api.Record) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	// Verificamos si necesitamos crear un nuevo segmento basándonos en el tamaño actual
-	if l.activeSegment.store.size >= l.Config.Segment.MaxStoreBytes ||
-		l.activeSegment.index.size >= l.Config.Segment.MaxIndexBytes {
+	if l.activeSegment.IsMaxed() {
 		err = l.newSegment(off + 1)
 	}
 	return off, err

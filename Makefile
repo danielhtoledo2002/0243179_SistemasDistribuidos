@@ -1,8 +1,7 @@
 
 # Esto nos ayuda a posicionar nuestros config files en una carpeta dentro de nuestro proyecto
 
-CONFIG_PATH=${HOME}/reps/0243179_SistemasDistribuidos/cert
-
+CONFIG_PATH=$(USERPROFILE)/reps/0243179_SistemasDistribuidos/cert/
 .PHONY: init
 
 init:
@@ -46,7 +45,7 @@ gencert:
 		-profile=client \
 		-cn="nobody" \
 		test/client-csr.json | cfssljson -bare nobody-client
-	mv *.pem *.csr ${CONFIG_PATH}
+	mv *.pem *.csr /Users/danielhernandez/reps/0243179_SistemasDistribuidos/cert
 
 compile:
 	protoc api/v1/*.proto \

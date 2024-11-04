@@ -3,6 +3,8 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"fmt"
+	
 )
 
 var (
@@ -14,7 +16,7 @@ var (
 	NobodyClientCertFile = configFile("nobody-client.pem")
 	NobodyClientKeyFile  = configFile("nobody-client-key.pem")
 	ACLModelFile         = configFile("model.conf")
-	ACLPolicyFile        = configFile("policy.csv")
+	ACLPolicyFile        = configFile("Policy.csv")
 )
 
 func configFile(filename string) string {
@@ -25,8 +27,11 @@ func configFile(filename string) string {
 	if err != nil {
 		panic(err)
 	}
+		fmt.Printf("directory: %v\n", homeDir)
+
+		fmt.Printf("directory: %v\n",  filepath.Join("/Users/danielhernandez/reps/0243179_SistemasDistribuidos/cert/", filename))
 
 	// modify this
-	return filepath.Join(homeDir, "reps/0243179_SistemasDistribuidos/cert", filename)
+	return filepath.Join("/Users/danielhernandez/reps/0243179_SistemasDistribuidos/cert/", filename)
 }
 
